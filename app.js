@@ -1,14 +1,39 @@
-var app = angular.module('app', ['ngAnimate', 'ngTouch', 'ui.grid', 'ui.grid.grouping', 'ui.grid.edit', 'ui.grid.selection']);
+var app = angular.module('app', ['ngAnimate', 'ngTouch', 'ui.grid', 'ui.grid.grouping', 'ui.grid.edit', 'ui.grid.selection', 'infinite-scroll']);
 
 app.controller('MainCtrl', ['$scope', '$http', '$interval', 'uiGridGroupingConstants', function ($scope, $http, $interval, uiGridGroupingConstants) {
     $scope.debug = function () {
         console.error($scope);
     };
 
+    $scope.render = function () {
+        console.error($scope.gridApi.grid.renderContainers.body);
+    };
+
+
+    $scope.items = [];
+    $scope.temp = [];
+
+    $scope.loadMore = function () {
+        if ($scope.items.length) {
+            for (var i = 0; i < 10; i++) {
+                if ($scope.temp.length < $scope.items.length) {
+                    $scope.temp.push($scope.items[$scope.temp.length]);
+                }
+            }
+        }
+    };
+
+    $scope.openMenu = function (col) {
+        $scope.visible = {};
+        $scope.visible[col.field] = true;
+        $scope.items = $scope.getUniqueValues($scope.gridApi.grid.rows, col.field);
+        angular.copy($scope.items.slice(0, 100), $scope.temp);
+    };
+
     $scope.getUniqueValues = function (rows, col) {
         var uniqueMap = [];
         rows.map(function (row) {
-            var value = row.entity[col.field];
+            var value = row.entity[col];
             if (row.visible && uniqueMap.indexOf(value) === -1) {
                 uniqueMap.push(value);
             }
@@ -23,7 +48,7 @@ app.controller('MainCtrl', ['$scope', '$http', '$interval', 'uiGridGroupingConst
         showColumnFooter: false,
         treeCustomAggregations: {},
         columnDefs: [
-            {name: 'name', width: '15%'},
+            {field: 'name', width: '15%'},
             {field: 'age', width: '45%', treeAggregationType: 'count', type: 'number'}
         ],
         onRegisterApi: function (gridApi) {
